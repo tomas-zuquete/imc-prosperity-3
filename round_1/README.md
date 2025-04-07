@@ -15,7 +15,7 @@ In this round we will trade 3 commodities:
 Trading table
 The trading table below shows you the exchange rates from one currency to another. For example: For every Snowball you trade for Pizzas, you will get 1,45 Pizzas in return.
 
-![Trading table](img/image.png)
+![Trading table](../img/image.png)
 
 ### Solution
 
