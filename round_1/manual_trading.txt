@@ -1,0 +1,15 @@
+The optimal sequence for manual trading is 
+seashells → Pizza → Snowball → silicon → seashells
+Number of trades: 4
+Final amount: 2147.75 seashells
+
+Optimal trading sequence: seashells → Pizza → Snowball → silicon → seashells
+Number of trades: 4
+Final amount: 2147.75 seashells
+
+Detailed steps:
+Start with 2000 seashells
+Trade 2000.00 seashells → 3960.00 Pizza (rate: 1.98)
+Trade 3960.00 Pizza → 2772.00 Snowball (rate: 0.7)
+Trade 2772.00 Snowball → 1441.44 silicon (rate: 0.52)
+Trade 1441.44 silicon → 2147.75 seashells (rate: 1.49)
