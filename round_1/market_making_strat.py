@@ -19,7 +19,7 @@ class Trader:
             # Get order depth for this product
             order_depth: OrderDepth = state.order_depths[product]
             position = state.position.get(product, 0)
-            position_limit = 20  # You'll need to adjust this per product
+            position_limit = 20  # adjust this per product
             
             # Calculate fair value (mid price)
             if len(order_depth.buy_orders) > 0 and len(order_depth.sell_orders) > 0:
