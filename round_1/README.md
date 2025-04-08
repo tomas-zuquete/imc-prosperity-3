@@ -6,7 +6,9 @@ In this round we will trade 3 commodities:
 2. KELP - Harvesting can be tricky and price is unpredictable - valued at 2.000 SeaShells per piece.
 3. SQUID INK - There is a pattern to be discovered - valued at 2.000 SeaShells per piece.
 
-| ![Round 1 day -2](../img/round1_prices.png) | ![Round 1 day -1](../img/round1_prices2.png) | ![Round 1 day 0](../img/round1_prices3.png) |
+| ![Round 1 day -2](../img/round1_prices.png) | ![Round 1 day -1](../img/round1_prices2.png) |
+
+![Round 1 day 0](../img/round1_prices3.png)
 
 ## Manual Trading
 
