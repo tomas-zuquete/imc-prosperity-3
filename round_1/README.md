@@ -46,3 +46,5 @@ Starting with 2,000,000 SeaShells, this strategy would yield approximately 2,147
 The trading strategy shown in your uploaded image exactly matches this optimal sequence. Therefore, the strategy you have input in the interface is the most profitable one based on the provided exchange rates.
 
 Sources and related content
+
+![Trading table](../img/round_1_manual_trading.png)
