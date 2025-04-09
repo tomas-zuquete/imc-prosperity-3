@@ -1,7 +1,13 @@
-# imc-prosperity-3
+# IMC challenge - Prosperity 3
 
-### Risk-Free Cowboys
+https://prosperity.imc.com/
 
-![Team](img/risk_free_cowboys.png)
+---
+
+## <center>Risk-Free Cowboys</center>
+
+<center>
+    <img src="img/risk_free_cowboys.png" alt="drawing" width="350"/>
+</center>
 
 IMC's prosperity third year challenge
