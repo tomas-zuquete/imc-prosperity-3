@@ -1,3 +1,5 @@
+# Round 1
+
 ## Algorithm challenge
 
 In this round we will trade 3 commodities:
