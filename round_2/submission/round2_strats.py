@@ -16,6 +16,14 @@ JAMS = "JAMS"
 DJEMBES = "DJEMBES"
 PICNIC_BASKET1 = "PICNIC_BASKET1"
 PICNIC_BASKET2 = "PICNIC_BASKET2"
+
+VOLCANIC_ROCK = "VOLCANIC_ROCK"
+VOLCANIC_ROCK_VOUCHER_9500 = "VOLCANIC_ROCK_VOUCHER_9500"
+VOLCANIC_ROCK_VOUCHER_9750 = "VOLCANIC_ROCK_VOUCHER_9750"
+VOLCANIC_ROCK_VOUCHER_10000 = "VOLCANIC_ROCK_VOUCHER_10000"
+VOLCANIC_ROCK_VOUCHER_10250 = "VOLCANIC_ROCK_VOUCHER_10250"
+VOLCANIC_ROCK_VOUCHER_10500 = "VOLCANIC_ROCK_VOUCHER_10500"
+
 PRODUCTS = [
     RESIN,
     KELP,
@@ -24,7 +32,22 @@ PRODUCTS = [
     JAMS,
     DJEMBES,
     PICNIC_BASKET1,
-    PICNIC_BASKET2
+    PICNIC_BASKET2,
+    VOLCANIC_ROCK,
+    VOLCANIC_ROCK_VOUCHER_9500,
+    VOLCANIC_ROCK_VOUCHER_9750,
+    VOLCANIC_ROCK_VOUCHER_10000,
+    VOLCANIC_ROCK_VOUCHER_10250,
+    VOLCANIC_ROCK_VOUCHER_10500
+]
+
+VOLCANIC_PRODUCTS = [
+    VOLCANIC_ROCK,
+    VOLCANIC_ROCK_VOUCHER_9500,
+    VOLCANIC_ROCK_VOUCHER_9750,
+    VOLCANIC_ROCK_VOUCHER_10000,
+    VOLCANIC_ROCK_VOUCHER_10250,
+    VOLCANIC_ROCK_VOUCHER_10500
 ]
 
 DEFAULT_PRICES = {
@@ -35,7 +58,13 @@ DEFAULT_PRICES = {
     JAMS: 500,
     DJEMBES: 500,
     PICNIC_BASKET1: 500,
-    PICNIC_BASKET2: 500
+    PICNIC_BASKET2: 500,
+    VOLCANIC_ROCK: 10000,
+    VOLCANIC_ROCK_VOUCHER_9500: 1000,
+    VOLCANIC_ROCK_VOUCHER_9750: 750,
+    VOLCANIC_ROCK_VOUCHER_10000: 500,
+    VOLCANIC_ROCK_VOUCHER_10250: 275,
+    VOLCANIC_ROCK_VOUCHER_10500: 100
 }
 
 def compute_SMA(prices: List[float], window: int) -> float:
@@ -406,35 +435,6 @@ class Trader:
         sigma = max(1e-6, sigma)
         return mu, theta, sigma
     
-    # def ink_strategy(self, state: TradingState):
-    #   perc_diff = 0 
-    #   mean = -0.00001
-    #   std =  0.00169
-    #   position_ink = self.get_position(SQUID_INK, state)
-    #   if self.ink_prev_mid_price:
-    #     perc_diff = (self.get_mid_price(SQUID_INK, state) - self.ink_prev_mid_price) / self.ink_prev_mid_price
-    #   else:
-    #       self.ink_prev_mid_price = self.get_mid_price(SQUID_INK, state)
-
-    #   bid_volume = self.position_limit[SQUID_INK] - position_ink
-    #   ask_volume = -self.position_limit[SQUID_INK] - position_ink
-
-    #   orders = []
-    #   # order_ratio = self.get_order_ratio(SQUILD_INK, state)
-    #   mid_price = self.get_mid_price(SQUID_INK, state)
-    #   best_ask, best_ask_amount = list(state.order_depths[SQUID_INK].sell_orders.items())[0]
-    #   best_bid, best_bid_amount = list(state.order_depths[SQUID_INK].buy_orders.items())[0]
-    #   if perc_diff != 0: # tried 0.5 , 0.6 is worst, now tired 0.55, if no improvement then keep 0.5
-    #       if perc_diff >= mean + 0.7 * std: # sell now buy later
-    #             orders.append(Order(SQUID_INK, int(best_bid) , best_bid_amount)) # try bid_volume and ask_volume
-    #             orders.append(Order(SQUID_INK, int(mid_price), best_ask_amount))
-
-    #       elif perc_diff <= mean - 1 * std: # buy now sell later # tried 0.55
-    #             orders.append(Order(SQUID_INK, int(best_ask), best_ask_amount))
-    #             orders.append(Order(SQUID_INK, int(mid_price) , best_bid_amount))
-    #   print("orders: ", orders)
-
-    #   return orders
 
     def ink_strategy(self, state: TradingState):
         mid_price = self.get_mid_price(SQUID_INK, state)
@@ -548,118 +548,30 @@ class Trader:
         
         return orders
     
-    # def kelp_strategy(self, state: TradingState):
-    #     position_KELP = self.get_position(KELP, state)
+    def volcanic_rock_strategy(self, state: TradingState) -> List[Order]:
+        product = VOLCANIC_ROCK
+        position = self.get_position(product, state)
+        limit = 400
+        mid_price = self.get_mid_price(product, state)
 
-    #     bid_volume = self.position_limit[KELP] - position_KELP
-    #     ask_volume = -self.position_limit[KELP] - position_KELP
+        if mid_price is None:
+            mid_price = DEFAULT_PRICES[product]
 
-    #     print(f"Position KELP: {position_KELP}")
-    #     print(f"Bid Volume: {bid_volume}")
-    #     print(f"Ask Volume: {ask_volume}")
+        # Market making: quote around mid-price with small spread
+        edge = 1  # spread
+        bid_price = int(mid_price - edge)
+        ask_price = int(mid_price + edge)
 
-    #     orders = []
-    #     order_ratio = self.get_order_ratio(KELP, state)
-    #     mid_price = self.get_mid_price(KELP, state)
+        # Volume control based on position
+        bid_volume = min(limit - position, 50)
+        ask_volume = min(limit + position, 50)
 
-    #     best_ask, best_ask_amount = list(state.order_depths[KELP].sell_orders.items())[0]
-    #     best_bid, best_bid_amount = list(state.order_depths[KELP].buy_orders.items())[0]
+        return [
+            Order(product, bid_price, bid_volume),
+            Order(product, ask_price, -ask_volume)
+        ]
 
-    #     print(order_ratio)
-    #     if order_ratio > 0.1: # mid_price will likely drop, sell now, buy later
-    #         orders.append(Order(KELP, int(best_bid), bid_volume)) 
-    #         orders.append(Order(KELP, int(mid_price) - 1, ask_volume))  
-            
-    #     elif order_ratio < -0.1: 
-    #         orders.append(Order(KELP, int(best_ask), ask_volume))  
-    #         orders.append(Order(KELP, int(mid_price) + 1, bid_volume))
-    #     print("orders:", orders)
-    #     return orders
-    # def resin_strategy(self, state: TradingState, correction=1.0):
-
-    #   position_resin = self.get_position(RESIN, state)
-
-    #   bid_volume = self.position_limit[RESIN] - position_resin
-    #   ask_volume = -self.position_limit[RESIN] - position_resin
-
-    #   #print(f"Position resin: {position_resin}")
-    #   #print(f"Bid Volume: {bid_volume}")
-    #   #print(f"Ask Volume: {ask_volume}")
-
-    #   orders = []
-    #   best_ask, _volume1 = next(
-    #       iter(state.order_depths[RESIN].sell_orders.items()), (None, None)
-    #   )
-    #   best_bid, __volume2 = next(
-    #       iter(state.order_depths[RESIN].buy_orders.items()), (None, None)
-    #   )
-    #   mid_price = (best_bid + best_ask) / 2
-    #   # self.resin_prices.append(mid_price)
-    #   #log_return = np.log(mid_price/self.resin_prices[len(self.resin_prices)-2])
-    #   #self.resin_log_return.append(log_return)
-    #   print(f"best ask: {best_ask}\n")
-    #   print(f"best bid: {best_bid}\n")
-      
-    #   adjustment = round((DEFAULT_PRICES[RESIN] - mid_price) * correction)
-      
-    #   # 20: 1.686k, 15: 1.706, 10: 1.721, 5: 1.759, 4: 1.759, 3: 1.759, 2: 1.759
-    #   extra_adjustment_bid = 0
-    #   extra_adjustment_ask = 0
-    #   if position_resin > 5:
-    #       extra_adjustment_ask = - 1
-    #   if position_resin < -5:
-    #       extra_adjustment_bid = 1
-          
-          
-    #   orders.append(Order(RESIN, min(DEFAULT_PRICES[RESIN] - 1, best_bid + adjustment + extra_adjustment_bid), bid_volume))  # buy order
-    #   orders.append(Order(RESIN, max(DEFAULT_PRICES[RESIN] + 1, best_ask + adjustment + extra_adjustment_ask), ask_volume))  # sell order
-    #   return orders
-  
-    # def kelp_strategy(self, state: TradingState, correction=1.0):
-
-    #   position_kelp = self.get_position(KELP, state)
-
-    #   bid_volume = self.position_limit[KELP] - position_kelp
-    #   ask_volume = -self.position_limit[KELP] - position_kelp
-
-    #   #print(f"Position kelp: {position_kelp}")
-    #   #print(f"Bid Volume: {bid_volume}")
-    #   #print(f"Ask Volume: {ask_volume}")
-
-    #   orders = []
-    #   best_ask, _volume1 = next(
-    #       iter(state.order_depths[KELP].sell_orders.items()), (None, None)
-    #   )
-    #   best_bid, __volume2 = next(
-    #       iter(state.order_depths[KELP].buy_orders.items()), (None, None)
-    #   )
-    #   mid_price = (best_bid + best_ask) / 2
-    #   self.past_prices[KELP].append(mid_price)
-    #   # self.kelp_prices.append(mid_price)
-    #   #log_return = np.log(mid_price/self.kelp_prices[len(self.kelp_prices)-2])
-    #   #self.kelp_log_return.append(log_return)
-    #   print(f"best ask: {best_ask}\n")
-    #   print(f"best bid: {best_bid}\n")
-      
-    #   '''if len(self.past_prices[KELP]) < 10:
-    #       return orders'''
-      
-      
-    #   if mid_price > DEFAULT_PRICES[KELP]:
-    #       ask_adjustment = -1
-    #       bid_adjustment = 0
-    #   elif mid_price < DEFAULT_PRICES[KELP]:
-    #       ask_adjustment = 0
-    #       bid_adjustment = 1
     
-    #   else:
-    #       ask_adjustment = 0
-    #       bid_adjustment = 0
-        
-          
-    #   orders.append(Order(KELP, best_bid + bid_adjustment, bid_volume))  # buy order
-    #   orders.append(Order(KELP, best_ask + ask_adjustment, ask_volume))  # sell order
-    #   return orders
     
     def run(self, state: TradingState) -> Tuple[Dict[str, List[Order]], Any, Any]:
         """
@@ -693,79 +605,84 @@ class Trader:
 
         
 
-        try:
-            result[RESIN] = self.resin_strategy(state)
+        # try:
+        #     result[RESIN] = self.resin_strategy(state)   
+        # except Exception as e:
+        #     print("Error: ")
+        #     print("Error occurred while executing resin_strategy:")
+        #     print(f"Exception Type: {type(e).__name__}")
+        #     print(f"Exception Message: {str(e)}")
+        #     print("Stack Trace:")
+
+        # try:
+        #     result[KELP] = self.kelp_strategy(state)
+        # except Exception as e:
+        #     print("Error: ")
+        #     print("Error occurred while executing kelp_strategy:")
+        #     print(f"Exception Type: {type(e).__name__}")
+        #     print(f"Exception Message: {str(e)}")
+        #     print("Stack Trace:")
+
+        # try:
+        #     result[SQUID_INK] = self.ink_strategy(state)
+        # except Exception as e:
+        #     print("Error: ")
+        #     print("Error occurred while executing ink_strategy:")
+        #     print(f"Exception Type: {type(e).__name__}")
+        #     print(f"Exception Message: {str(e)}")
+        #     print("Stack Trace:")
+
+        # try:
+        #     result[CROISSANTS] = self.croissants_strategy(state)
+        # except Exception as e:
+        #     print("Error: ")
+        #     print("Error occurred while executing crossants_strategy:")
+        #     print(f"Exception Type: {type(e).__name__}")
+        #     print(f"Exception Message: {str(e)}")
+        #     print("Stack Trace:")
+
+        # try:
+        #     result[JAMS] = self.jams_strategy(state)
+        # except Exception as e:
+        #     print("Error: ")
+        #     print("Error occurred while executing jams_strategy:")
+        #     print(f"Exception Type: {type(e).__name__}")
+        #     print(f"Exception Message: {str(e)}")
+        #     print("Stack Trace:")
+
+        # try:
+        #     result[DJEMBES] = self.djembes_strategy(state)
+        # except Exception as e:
+        #     print("Error: ")
+        #     print("Error occurred while executing jams_strategy:")
+        #     print(f"Exception Type: {type(e).__name__}")
+        #     print(f"Exception Message: {str(e)}")
+        #     print("Stack Trace:")
+
+        # try:
+        #     result[PICNIC_BASKET1] = self.picnic_basket1_strategy(state)
+        # except Exception as e:
+        #     print("Error: ")
+        #     print("Error occurred while executing jams_strategy:")
+        #     print(f"Exception Type: {type(e).__name__}")
+        #     print(f"Exception Message: {str(e)}")
+        #     print("Stack Trace:")
+
+        # try:
+        #     result[PICNIC_BASKET2] = self.picnic_basket2_strategy(state)
+        # except Exception as e:
+        #     print("Error: ")
+        #     print("Error occurred while executing jams_strategy:")
+        #     print(f"Exception Type: {type(e).__name__}")
+        #     print(f"Exception Message: {str(e)}")
+        #     print("Stack Trace:")
             
-           
-        except Exception as e:
-            print("Error: ")
-            print("Error occurred while executing resin_strategy:")
-            print(f"Exception Type: {type(e).__name__}")
-            print(f"Exception Message: {str(e)}")
-            print("Stack Trace:")
-
         try:
-            result[KELP] = self.kelp_strategy(state)
+            result[VOLCANIC_ROCK] = self.volcanic_rock_strategy(state)
         except Exception as e:
-            print("Error: ")
-            print("Error occurred while executing kelp_strategy:")
+            print("Error occurred while executing volcanic_rock_strategy:")
             print(f"Exception Type: {type(e).__name__}")
             print(f"Exception Message: {str(e)}")
-            print("Stack Trace:")
-
-        try:
-            result[SQUID_INK] = self.ink_strategy(state)
-        except Exception as e:
-            print("Error: ")
-            print("Error occurred while executing ink_strategy:")
-            print(f"Exception Type: {type(e).__name__}")
-            print(f"Exception Message: {str(e)}")
-            print("Stack Trace:")
-
-        try:
-            result[CROISSANTS] = self.croissants_strategy(state)
-        except Exception as e:
-            print("Error: ")
-            print("Error occurred while executing crossants_strategy:")
-            print(f"Exception Type: {type(e).__name__}")
-            print(f"Exception Message: {str(e)}")
-            print("Stack Trace:")
-
-        try:
-            result[JAMS] = self.jams_strategy(state)
-        except Exception as e:
-            print("Error: ")
-            print("Error occurred while executing jams_strategy:")
-            print(f"Exception Type: {type(e).__name__}")
-            print(f"Exception Message: {str(e)}")
-            print("Stack Trace:")
-
-        try:
-            result[DJEMBES] = self.djembes_strategy(state)
-        except Exception as e:
-            print("Error: ")
-            print("Error occurred while executing jams_strategy:")
-            print(f"Exception Type: {type(e).__name__}")
-            print(f"Exception Message: {str(e)}")
-            print("Stack Trace:")
-
-        try:
-            result[PICNIC_BASKET1] = self.picnic_basket1_strategy(state)
-        except Exception as e:
-            print("Error: ")
-            print("Error occurred while executing jams_strategy:")
-            print(f"Exception Type: {type(e).__name__}")
-            print(f"Exception Message: {str(e)}")
-            print("Stack Trace:")
-
-        try:
-            result[PICNIC_BASKET2] = self.picnic_basket2_strategy(state)
-        except Exception as e:
-            print("Error: ")
-            print("Error occurred while executing jams_strategy:")
-            print(f"Exception Type: {type(e).__name__}")
-            print(f"Exception Message: {str(e)}")
-            print("Stack Trace:")
 
 
 
