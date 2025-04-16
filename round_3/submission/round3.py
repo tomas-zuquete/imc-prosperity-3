@@ -57,25 +57,30 @@ DEFAULT_PRICES = {
 }
 
 def norm_pdf(x: float) -> float:
-    """Standard normal PDF: exp(-x^2/2) / sqrt(2π)."""
-    return math.exp(-0.5 * x * x) / math.sqrt(2 * math.pi)
+    """Approximate the standard normal PDF using a simple formula."""
+    return (1.0 / math.sqrt(2 * math.pi)) * math.exp(-0.5 * x * x)
 
 def norm_cdf(x: float) -> float:
-    """Approximate standard normal CDF using Abramowitz and Stegun."""
-    if x < -10:  # Handle extreme values
+    """Approximate the standard normal CDF using a polynomial approximation."""
+    # Hart's approximation for the standard normal CDF (accurate for practical purposes)
+    if x < -10:
         return 0.0
     if x > 10:
         return 1.0
-    # Constants for approximation
-    b1, b2, b3, b4, b5 = 0.319381530, -0.356563782, 1.781477937, -1.821255978, 1.330274429
+    
+    # Constants for Hart's approximation
+    a1, a2, a3, a4, a5 = 0.31938153, -0.356563782, 1.781477937, -1.821255978, 1.330274429
     p = 0.2316419
-    c = 1 / math.sqrt(2 * math.pi)
     t = 1 / (1 + p * abs(x))
-    poly = b1 * t + b2 * t**2 + b3 * t**3 + b4 * t**4 + b5 * t**5
-    approx = c * math.exp(-x**2 / 2) * poly
-    if x >= 0:
-        return 1 - approx
-    return approx
+    t2 = t * t
+    t3 = t2 * t
+    t4 = t3 * t
+    t5 = t4 * t
+    poly = a1 * t + a2 * t2 + a3 * t3 + a4 * t4 + a5 * t5
+    z = norm_pdf(x)
+    cdf = 1 - z * poly
+    
+    return cdf if x >= 0 else 1 - cdf
 
 # Utility functions
 def compute_SMA(prices: List[float], window: int) -> float:
@@ -123,21 +128,42 @@ def update_EMA(prev_ema: float, price: float, window: int) -> float:
 
 # Black-Scholes
 def black_scholes_call(S: float, K: float, T: float, r: float, sigma: float, q: float = 0) -> Tuple[float, float, float]:
-    """Calculate Black-Scholes call price, delta, and gamma."""
+     
     if T <= 0 or sigma <= 0 or S <= 0 or K <= 0:
-        price = max(S - K, 0)
+        price = max(S - K, 0)  # Intrinsic value of the call
+        delta = 1 if S > K else 0  # Delta is 1 if in-the-money, else 0
+        gamma = 0  # No curvature for expired or invalid options
+        return price, delta, gamma
+
+    try:
+        # Calculate d1 and d2
+        sqrt_T = math.sqrt(T)
+        sigma_sqrt_T = sigma * sqrt_T
+        if sigma_sqrt_T == 0:
+            price = max(S - K, 0)
+            delta = 1 if S > K else 0
+            gamma = 0
+            return price, delta, gamma
+        d1 = (math.log(S / K) + (r - q + 0.5 * sigma**2) * T) / sigma_sqrt_T
+        d2 = d1 - sigma_sqrt_T
+
+        # Calculate price, delta, and gamma
+        price = S * math.exp(-q * T) * norm_cdf(d1) - K * math.exp(-r * T) * norm_cdf(d2)
+        delta = math.exp(-q * T) * norm_cdf(d1)
+        
+        # Gamma calculation: protect against S * sigma * sqrt(T) being zero
+        denominator = S * sigma_sqrt_T
+        gamma = math.exp(-q * T) * norm_pdf(d1) / denominator if denominator != 0 else 0
+
+        return price, delta, gamma
+
+    except (ValueError, ZeroDivisionError, OverflowError) as e:
+        # Handle numerical errors (e.g., log of zero, overflow)
+        print(f"Error in Black-Scholes: {e}, S={S}, K={K}, T={T}, sigma={sigma}")
+        price = max(S - K, 0)  # Fallback to intrinsic value
         delta = 1 if S > K else 0
         gamma = 0
         return price, delta, gamma
-    try:
-        d1 = (math.log(S / K) + (r - q + 0.5 * sigma**2) * T) / (sigma * math.sqrt(T))
-        d2 = d1 - sigma * math.sqrt(T)
-        price = S * math.exp(-q * T) * norm_cdf(d1) - K * math.exp(-r * T) * norm_cdf(d2)
-        delta = math.exp(-q * T) * norm_cdf(d1)
-        gamma = math.exp(-q * T) * norm_pdf(d1) / (S * sigma * math.sqrt(T))
-        return price, delta, gamma
-    except (ValueError, ZeroDivisionError):
-        return max(S - K, 0), 1 if S > K else 0, 0
 
 class Trader:
     def __init__(self) -> None:
@@ -163,7 +189,7 @@ class Trader:
         self.round = 0
         self.cash = 0
         self.ou_params = {"mu": -0.000013, "theta": 0.01, "sigma": 0.000025}
-        self.kelp_ou_params = {"mu": -0.000013, "theta": 0.01, "sigma": 0.000025}
+        self.kelp_ou_params = {"mu": 0.000006, "theta": 0.01, "sigma": 0.000713}
         self.past_prices = {product: [] for product in PRODUCTS}
         self.ema_param = 0.5
         self.new_history = {CROISSANTS: [], JAMS: [], DJEMBES: []}
@@ -184,9 +210,9 @@ class Trader:
             VOLCANIC_ROCK_VOUCHER_10500: 10500
         }
         self.voucher_volatility = 0.0009450871502416238  
-        self.risk_free_rate = 0.05
+        self.risk_free_rate = 0.0435
         self.time_to_maturity = 7 / 365  # 7 days from round 1
-        self.base_spread = 0.2  # Base spread for vouchers
+        self.base_spread = 0.25  # Base spread for vouchers
 
     def get_position(self, product, state: TradingState) -> int:
         return state.position.get(product, 0)
@@ -256,11 +282,12 @@ class Trader:
                 self.ema_prices[product] = self.ema_param * mid_price + (1 - self.ema_param) * self.ema_prices[product]
 
     def implied_volatility(self, S, K, T, r, option_price, q=0) -> float:
-        sigma = 0.2  # Start closer to typical market
+        sigma = 0.3
         for _ in range(50):
             price, _, _ = black_scholes_call(S, K, T, r, sigma, q)
+        
             if abs(price) < 1e-6:
-                return 0.2  # Avoid division issues
+                return 0.3
             d1 = (math.log(S / K) + (r - q + 0.5 * sigma**2) * T) / (sigma * math.sqrt(T))
             vega = S * norm_pdf(d1) * math.sqrt(T)
             if vega < 1e-6:
@@ -275,92 +302,92 @@ class Trader:
 
     def update_volatility(self, prices: List[float]) -> float:
         if len(prices) < 2:
-            return max(self.voucher_volatility, 0.1)
+            return max(self.voucher_volatility, 0.5)
         log_returns = [math.log(prices[i] / prices[i-1]) for i in range(1, len(prices)) if prices[i-1] > 0]
         if log_returns:
             self.voucher_volatility = max(np.std(log_returns) * math.sqrt(252), 0.1)
         return self.voucher_volatility
   
-    # def croissants_strategy(self, state: TradingState) -> List[Order]:
-    #     product = CROISSANTS
-    #     pos = self.get_position(product, state)
-    #     mid = self.get_mid_price(product, state)
-    #     self.new_history[product].append(mid)
-    #     prices = self.new_history[product]
-    #     window = 20
-    #     sma20 = compute_SMA(prices, window) if len(prices) >= window else compute_SMA(prices, len(prices))
-    #     std20 = compute_STD(prices, window) if len(prices) >= window else compute_STD(prices, len(prices))
-    #     lower_band = sma20 - 2 * std20
-    #     rsi = compute_RSI(prices, 14)
-    #     signal = 0
-    #     if mid <= lower_band and rsi < 28:
-    #         signal = 1
-    #     elif mid >= sma20 or rsi > 72:
-    #         signal = -1
-    #     if signal == 1:
-    #         bid_price = int(mid - 1)
-    #         ask_price = int(mid + 2)
-    #     elif signal == -1:
-    #         bid_price = int(mid - 2)
-    #         ask_price = int(mid + 1)
-    #     else:
-    #         bid_price = int(mid - 1)
-    #         ask_price = int(mid + 1)
-    #     bid_volume = self.position_limit[product] - pos
-    #     ask_volume = -self.position_limit[product] - pos
-    #     return [Order(product, bid_price, bid_volume), Order(product, ask_price, ask_volume)]
+    def croissants_strategy(self, state: TradingState) -> List[Order]:
+        product = CROISSANTS
+        pos = self.get_position(product, state)
+        mid = self.get_mid_price(product, state)
+        self.new_history[product].append(mid)
+        prices = self.new_history[product]
+        window = 20
+        sma20 = compute_SMA(prices, window) if len(prices) >= window else compute_SMA(prices, len(prices))
+        std20 = compute_STD(prices, window) if len(prices) >= window else compute_STD(prices, len(prices))
+        lower_band = sma20 - 2 * std20
+        rsi = compute_RSI(prices, 14)
+        signal = 0
+        if mid <= lower_band and rsi < 28:
+            signal = 1
+        elif mid >= sma20 or rsi > 72:
+            signal = -1
+        if signal == 1:
+            bid_price = int(mid - 1)
+            ask_price = int(mid + 2)
+        elif signal == -1:
+            bid_price = int(mid - 2)
+            ask_price = int(mid + 1)
+        else:
+            bid_price = int(mid - 1)
+            ask_price = int(mid + 1)
+        bid_volume = self.position_limit[product] - pos
+        ask_volume = -self.position_limit[product] - pos
+        return [Order(product, bid_price, bid_volume), Order(product, ask_price, ask_volume)]
 
-    # def jams_strategy(self, state: TradingState) -> List[Order]:
-    #     product = JAMS
-    #     pos = self.get_position(product, state)
-    #     mid = self.get_mid_price(product, state)
-    #     self.new_history[product].append(mid)
-    #     prices = self.new_history[product]
-    #     stoch_val = compute_stochastic(prices, 14)
-    #     signal = 0
-    #     if stoch_val < 25:
-    #         signal = 1
-    #     elif stoch_val > 75:
-    #         signal = -1
-    #     if signal == 1:
-    #         bid_price = int(mid - 1)
-    #         ask_price = int(mid + 2)
-    #     elif signal == -1:
-    #         bid_price = int(mid - 2)
-    #         ask_price = int(mid + 1)
-    #     else:
-    #         bid_price = int(mid - 1)
-    #         ask_price = int(mid + 1)
-    #     bid_volume = self.position_limit[product] - pos
-    #     ask_volume = -self.position_limit[product] - pos
-    #     return [Order(product, bid_price, bid_volume), Order(product, ask_price, ask_volume)]
+    def jams_strategy(self, state: TradingState) -> List[Order]:
+        product = JAMS
+        pos = self.get_position(product, state)
+        mid = self.get_mid_price(product, state)
+        self.new_history[product].append(mid)
+        prices = self.new_history[product]
+        stoch_val = compute_stochastic(prices, 14)
+        signal = 0
+        if stoch_val < 25:
+            signal = 1
+        elif stoch_val > 75:
+            signal = -1
+        if signal == 1:
+            bid_price = int(mid - 1)
+            ask_price = int(mid + 2)
+        elif signal == -1:
+            bid_price = int(mid - 2)
+            ask_price = int(mid + 1)
+        else:
+            bid_price = int(mid - 1)
+            ask_price = int(mid + 1)
+        bid_volume = self.position_limit[product] - pos
+        ask_volume = -self.position_limit[product] - pos
+        return [Order(product, bid_price, bid_volume), Order(product, ask_price, ask_volume)]
 
-    # def djembes_strategy(self, state: TradingState) -> List[Order]:
-    #     product = DJEMBES
-    #     pos = self.get_position(product, state)
-    #     mid = self.get_mid_price(product, state)
-    #     self.new_history[product].append(mid)
-    #     prices = self.new_history[product]
-    #     rsi = compute_RSI(prices, 14)
-    #     atr = compute_ATR(prices, 14)
-    #     atr_med = np.median(prices[-14:]) if len(prices) >= 14 else atr
-    #     signal = 0
-    #     if rsi < 28 and atr > atr_med:
-    #         signal = 1
-    #     elif rsi > 72 and atr > atr_med:
-    #         signal = -1
-    #     if signal == 1:
-    #         bid_price = int(mid - 1)
-    #         ask_price = int(mid + 2)
-    #     elif signal == -1:
-    #         bid_price = int(mid - 2)
-    #         ask_price = int(mid + 1)
-    #     else:
-    #         bid_price = int(mid - 1)
-    #         ask_price = int(mid + 1)
-    #     bid_volume = self.position_limit[product] - pos
-    #     ask_volume = -self.position_limit[product] - pos
-    #     return [Order(product, bid_price, bid_volume), Order(product, ask_price, ask_volume)]
+    def djembes_strategy(self, state: TradingState) -> List[Order]:
+        product = DJEMBES
+        pos = self.get_position(product, state)
+        mid = self.get_mid_price(product, state)
+        self.new_history[product].append(mid)
+        prices = self.new_history[product]
+        rsi = compute_RSI(prices, 14)
+        atr = compute_ATR(prices, 14)
+        atr_med = np.median(prices[-14:]) if len(prices) >= 14 else atr
+        signal = 0
+        if rsi < 28 and atr > atr_med:
+            signal = 1
+        elif rsi > 72 and atr > atr_med:
+            signal = -1
+        if signal == 1:
+            bid_price = int(mid - 1)
+            ask_price = int(mid + 2)
+        elif signal == -1:
+            bid_price = int(mid - 2)
+            ask_price = int(mid + 1)
+        else:
+            bid_price = int(mid - 1)
+            ask_price = int(mid + 1)
+        bid_volume = self.position_limit[product] - pos
+        ask_volume = -self.position_limit[product] - pos
+        return [Order(product, bid_price, bid_volume), Order(product, ask_price, ask_volume)]
 
     # def picnic_basket1_strategy(self, state: TradingState) -> List[Order]:
     #     product = PICNIC_BASKET1
@@ -913,7 +940,7 @@ class Trader:
         if self.kelp_prev_mid_price and self.kelp_prev_mid_price != 0:
             perc_diff = (mid_price - self.kelp_prev_mid_price) / self.kelp_prev_mid_price
         self.kelp_prev_mid_price = mid_price
-        if len(self.kelp_mid_prices) >= 20 and state.timestamp % 20 == 0:
+        if len(self.kelp_mid_prices) >= 20:
             X = [(self.kelp_mid_prices[i] - self.kelp_mid_prices[i-1]) / self.ink_mid_prices[i-1]
                 for i in range(1, len(self.kelp_mid_prices)) if self.kelp_mid_prices[i-1] != 0]
             if X:
@@ -946,24 +973,27 @@ class Trader:
                 orders.append(Order(KELP, ask_price, ask_volume))
         print(f"z_score: {z_score:.2f}, perc_diff: {perc_diff:.6f}, orders: {[('Kelp', o.price, o.quantity) for o in orders]}")
         return orders
+
+
    
+
     def volcanic_rock_vouchers_strategy(self, state: TradingState) -> Dict[str, List[Order]]:
         """Market-making strategy for VOLCANIC_ROCK vouchers."""
         result = {}
-        S = self.get_mid_price(VOLCANIC_ROCK, state)
+        S = self.get_mid_price(VOLCANIC_ROCK, state) or DEFAULT_PRICES[VOLCANIC_ROCK]
         self.past_prices[VOLCANIC_ROCK].append(S)
-        self.update_volatility(self.past_prices[VOLCANIC_ROCK][-50:])  
+        if len(self.past_prices[VOLCANIC_ROCK]) > 25: #50
+            self.update_volatility(self.past_prices[VOLCANIC_ROCK][-25:])  
 
         total_delta = 0
-        total_pos = sum(abs(self.get_position(p, state)) for p in self.voucher_strikes)
+        
         rock_pos = self.get_position(VOLCANIC_ROCK, state)
         rock_bid_volume = self.position_limit[VOLCANIC_ROCK] - rock_pos
         rock_ask_volume = -self.position_limit[VOLCANIC_ROCK] - rock_pos
         hedging_orders = []
 
-
-        trade_size = 50
-
+        trade_size = 50 #200
+ 
         for product in self.voucher_strikes:
             K = self.voucher_strikes[product]
             pos = self.get_position(product, state)
@@ -974,15 +1004,15 @@ class Trader:
             best_bid = None
             best_ask = None
             if product in state.order_depths and state.order_depths[product].buy_orders and state.order_depths[product].sell_orders:
-                market_price = self.get_mid_price(product, state)
+                market_price = self.get_mid_price(product, state) or DEFAULT_PRICES[PRODUCTS]
                 best_bid = max(state.order_depths[product].buy_orders.keys())
                 best_ask = min(state.order_depths[product].sell_orders.keys())
                 sigma = self.implied_volatility(S, K, self.time_to_maturity, self.risk_free_rate, market_price)
-
+                sigma = max(sigma, 1e-6) if sigma is not None else 1e-6
             price, delta, gamma = black_scholes_call(S, K, self.time_to_maturity, self.risk_free_rate, sigma, q=0)
 
-            spread = 0.1 + min(0.25 * gamma, 0.4)
-            inventory_adjust = 0.20 * pos
+            spread = 1.5 + min(0.3 * gamma, 0.4)
+            inventory_adjust = 0.02 * pos # 0.2
             fair_bid = (price - spread) / 2 - inventory_adjust
             fair_ask = (price + spread) / 2 - inventory_adjust
 
@@ -992,7 +1022,7 @@ class Trader:
 
             bid_volume = self.position_limit[product] - pos
             ask_volume = -self.position_limit[product] - pos
-
+            print("OK2")
             orders = []
             if bid_volume > 0:
                 orders.append(Order(product, bid_price, min(bid_volume, trade_size)))
@@ -1000,7 +1030,8 @@ class Trader:
                 orders.append(Order(product, ask_price, max(ask_volume, -trade_size)))
             result[product] = orders
 
-            total_delta += pos * delta
+            total_delta += pos * delta 
+            print("total_delta: ", total_delta)
 
             # Diagnostics
             market_mid = market_price if market_price else price
@@ -1068,7 +1099,7 @@ class Trader:
         self.round += 1
         pnl = self.update_pnl(state)
         self.update_ema_prices(state)
-        self.time_to_maturity = max((7 - self.round + 1) / 365, 0)  # 7 days from round 1
+         
 
         print(f"Log round {self.round}")
         print("TRADES:")
