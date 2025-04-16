@@ -241,51 +241,29 @@ class Trader:
         except Exception as e:
             print(f"Error occurred while executing resin_mm_strategy:")
             print(f"Exception Type: {type(e).__name__}")
+            print(f"Exception Message: {str(e)}") 
+            
+        try:
+            result[SQUID_INK] = self.squid_ink_mm_strategy(state)
+        except Exception as e:
+            print(f"Error occurred while executing resin_mm_strategy:")
+            print(f"Exception Type: {type(e).__name__}")
+            print(f"Exception Message: {str(e)}") 
+        
+        try:
+            result[PICNIC_BASKET1] = self.picnic_1_mm_strategy(state)
+        except Exception as e:
+            print(f"Error occurred while executing resin_mm_strategy:")
+            print(f"Exception Type: {type(e).__name__}")
             print(f"Exception Message: {str(e)}")
             
-        # for MM_PRODUCT in MM_PRODUCTS:
-        #     try:
-        #         result[MM_PRODUCT] = self.resin_mm_strategy(MM_PRODUCT, state)
-        #     except Exception as e:
-        #         print(f"Error occurred while executing resin_mm_strategy:")
-        #         print(f"Exception Type: {type(e).__name__}")
-        #         print(f"Exception Message: {str(e)}")
+        try:
+            result[PICNIC_BASKET2] = self.picnic_2_mm_strategy(state)
+        except Exception as e:
+            print(f"Error occurred while executing resin_mm_strategy:")
+            print(f"Exception Type: {type(e).__name__}")
+            print(f"Exception Message: {str(e)}") 
             
-            
-        #############################################################################################################################
-
-        # # Trade each voucher individually
-        # try:
-        #     if VOLCANIC_ROCK_VOUCHER_9500 in state.order_depths:
-        #         result[VOLCANIC_ROCK_VOUCHER_9500] = self.volcanic_rock_voucher_strategy(state, VOLCANIC_ROCK_VOUCHER_9500)
-        # except Exception as e:
-        #     print(f"Error trading {VOLCANIC_ROCK_VOUCHER_9500}: {str(e)}")
-        
-        # try:
-        #     if VOLCANIC_ROCK_VOUCHER_9750 in state.order_depths:
-        #         result[VOLCANIC_ROCK_VOUCHER_9750] = self.volcanic_rock_voucher_strategy(state, VOLCANIC_ROCK_VOUCHER_9750)
-        # except Exception as e:
-        #     print(f"Error trading {VOLCANIC_ROCK_VOUCHER_9750}: {str(e)}")
-        
-        # try:
-        #     if VOLCANIC_ROCK_VOUCHER_10000 in state.order_depths:
-        #         result[VOLCANIC_ROCK_VOUCHER_10000] = self.volcanic_rock_voucher_strategy(state, VOLCANIC_ROCK_VOUCHER_10000)
-        # except Exception as e:
-        #     print(f"Error trading {VOLCANIC_ROCK_VOUCHER_10000}: {str(e)}")
-        
-        # try:
-        #     if VOLCANIC_ROCK_VOUCHER_10250 in state.order_depths:
-        #         result[VOLCANIC_ROCK_VOUCHER_10250] = self.volcanic_rock_voucher_strategy(state, VOLCANIC_ROCK_VOUCHER_10250)
-        # except Exception as e:
-        #     print(f"Error trading {VOLCANIC_ROCK_VOUCHER_10250}: {str(e)}")
-        
-        # try:
-        #     if VOLCANIC_ROCK_VOUCHER_10500 in state.order_depths:
-        #         result[VOLCANIC_ROCK_VOUCHER_10500] = self.volcanic_rock_voucher_strategy(state, VOLCANIC_ROCK_VOUCHER_10500)
-        # except Exception as e:
-        #     print(f"Error trading {VOLCANIC_ROCK_VOUCHER_10500}: {str(e)}")
-        
-
         conversions = 0
         return result, conversions, None
 
@@ -362,74 +340,8 @@ class Trader:
                 else:
                     self.ema_prices[product] = self.ema_param * mid_price + (1-self.ema_param) * self.ema_prices[product]
 
-    # # Volcanic rock strategies
-    # def old_volcanic_rock_strategy(self, state: TradingState) -> List[Order]:
-    #     """
-    #     Market making strategy for volcanic rock
-        
-    #     Args:
-    #         state: Current trading state
-            
-    #     Returns:
-    #         List of orders for volcanic rock
-    #     """
-    #     product = VOLCANIC_ROCK
-    #     pos = self.get_position(product, state)
-        
-    #     # Calculate fair value using mid price
-    #     mid = self.get_mid_price(product, state)
-        
-    #     # Store price for volatility calculation
-    #     if product not in self.new_history:
-    #         self.new_history[product] = []
-    #     self.new_history[product].append(mid)
-        
-    #     # Market making spread
-    #     base_spread = 2
-        
-    #     # Adjust spread based on position
-    #     position_factor = abs(pos) / (self.position_limit[product] * 0.5)
-    #     spread_adjustment = int(position_factor * 5)
-        
-    #     # Calculate bid and ask prices
-    #     if pos > 0:
-    #         # We're long, so make selling more attractive
-    #         bid_price = int(mid - (base_spread + spread_adjustment))
-    #         ask_price = int(mid + base_spread)
-    #     elif pos < 0:
-    #         # We're short, so make buying more attractive
-    #         bid_price = int(mid - base_spread)
-    #         ask_price = int(mid + (base_spread + spread_adjustment))
-    #     else:
-    #         # Neutral position
-    #         bid_price = int(mid - base_spread)
-    #         ask_price = int(mid + base_spread)
-        
-    #     # Calculate order volumes
-    #     position_limit = self.position_limit[product]
-        
-    #     # Scale order sizes based on proximity to position limit
-    #     size_factor = 1.0 - (abs(pos) / position_limit)
-    #     base_size = max(1, int(40 * size_factor))
-        
-    #     bid_volume = min(base_size, position_limit - pos)
-    #     ask_volume = min(base_size, position_limit + pos)
-        
-    #     orders = []
-        
-    #     # Only place orders if we have capacity
-    #     if bid_volume > 0:
-    #         orders.append(Order(product, bid_price, bid_volume))
-        
-    #     if ask_volume > 0:
-    #         orders.append(Order(product, ask_price, -ask_volume))
-        
-    #     print(f"[VOLCANIC_ROCK] pos={pos}, mid={mid:.1f}, spread={base_spread+spread_adjustment}, bid={bid_price}x{bid_volume}, ask={ask_price}x{ask_volume}")
-        
-    #     return orders
-
     # Resin pnl - 1.91k
-    def resin_mm_strategy(self, MM_PRODUCT, state: TradingState) -> List[Order]: 
+    def resin_mm_strategy(self, state: TradingState) -> List[Order]: 
         """
         Market making strategy for resin rock with more aggressive parameters
         
@@ -533,109 +445,334 @@ class Trader:
                 orders.append(Order(product, ask_price, -min(40, sell_capacity)))
         
         # Print debug info
-        print(f"[VOLCANIC_ROCK] pos={pos}, mid={mid:.1f}, orders={[(o.price, o.quantity) for o in orders]}")
+        print(f"[{product}] pos={pos}, mid={mid:.1f}, orders={[(o.price, o.quantity) for o in orders]}")
         
         return orders
-
-
-    def volcanic_rock_voucher_strategy(self, state: TradingState, product: str) -> List[Order]:
+    
+    # Squid pnl - 313 - combined - 2224
+    def squid_ink_mm_strategy(self, state: TradingState) -> List[Order]: 
         """
-        Trading strategy for volcanic rock vouchers based on option pricing theory
+        Market making strategy for resin rock with more aggressive parameters
         
         Args:
             state: Current trading state
-            product: Voucher product name
             
         Returns:
-            List of orders for the voucher
+            List of orders for volcanic rock
         """
-        # Get current position
+        product = SQUID_INK
         pos = self.get_position(product, state)
         
-        # Get strike price for this voucher
-        strike_price = int(product.split("_")[-1])
+        # Get order book data
+        order_depth = state.order_depths[product]
         
-        # Get underlying price
-        rock_price = self.get_mid_price(VOLCANIC_ROCK, state)
-        
-        # Get market price of voucher
-        market_price = self.get_mid_price(product, state)
-        
-        # Calculate days to expiry based on current round
-        days_to_expiry = 8 - self.round
-        
-        # Calculate time to expiry in years (assuming 365 days in a year)
-        T = max(0.001, days_to_expiry / 365.0)
-        
-        # Estimate volatility based on volcanic rock price history
-        if len(self.new_history.get(VOLCANIC_ROCK, [])) >= 20:
-            prices = self.new_history[VOLCANIC_ROCK]
-            returns = [math.log(prices[i]/prices[i-1]) for i in range(1, len(prices))]
-            volatility = np.std(returns) * math.sqrt(252)  # Annualized
-            self.volatility = max(0.1, min(volatility, 1.0))  # Bound between 10% and 100%
+        # Calculate fair value using mid price
+        if order_depth.buy_orders and order_depth.sell_orders:
+            best_bid = max(order_depth.buy_orders.keys())
+            best_ask = min(order_depth.sell_orders.keys())
+            mid = (best_bid + best_ask) / 2
         else:
-            volatility = self.volatility
+            mid = self.get_mid_price(product, state)
         
-        # Calculate theoretical price using Black-Scholes
-        r = 0.0  # Risk-free rate
-        try:
-            theoretical_price = black_scholes_call_price(rock_price, strike_price, T, r, volatility)
-        except:
-            # Fallback to intrinsic value if calculation fails
-            theoretical_price = max(0, rock_price - strike_price)
+        # Store price for volatility calculation
+        if product not in self.new_history:
+            self.new_history[product] = []
+        self.new_history[product].append(mid)
         
-        # Price difference between theoretical and market price
-        price_diff = market_price - theoretical_price
-        
-        # Calculate bid/ask spread based on proximity to expiry
-        # Wider spreads as expiry approaches due to increased volatility risk
-        base_spread = 2 + int(5 * (1 / max(1, days_to_expiry)))
-        
-        # Calculate delta for risk management
-        try:
-            delta = black_scholes_call_delta(rock_price, strike_price, T, r, volatility)
-        except:
-            # Fallback if calculation fails
-            delta = 1.0 if rock_price > strike_price else 0.0
-        
-        # Adjust our fair value based on our position and delta
-        position_adjustment = -pos * 0.5 * delta
-        adjusted_fair_value = theoretical_price + position_adjustment
-        
-        # Set bid/ask prices around our adjusted fair value
-        bid_price = max(1, int(adjusted_fair_value - base_spread))
-        ask_price = max(bid_price + 1, int(adjusted_fair_value + base_spread))
-        
-        # Calculate order volumes
+        # Get position limit
         position_limit = self.position_limit[product]
         
-        # Scale order sizes based on delta (smaller sizes for low delta options)
-        size_factor = max(0.2, delta) * (1.0 - (abs(pos) / position_limit))
-        base_size = max(1, int(20 * size_factor))
-        
-        bid_volume = min(base_size, position_limit - pos)
-        ask_volume = min(base_size, position_limit + pos)
-        
-        # Adjust volumes based on mispricing
-        if price_diff > base_spread:  # Market price higher than theoretical
-            # Opportunity to sell at a premium
-            ask_volume = int(ask_volume * 1.5)
-            bid_volume = max(1, int(bid_volume * 0.5))
-        elif price_diff < -base_spread:  # Market price lower than theoretical
-            # Opportunity to buy at a discount
-            bid_volume = int(bid_volume * 1.5)
-            ask_volume = max(1, int(ask_volume * 0.5))
+        # Calculate available capacity
+        buy_capacity = position_limit - pos
+        sell_capacity = position_limit + pos
         
         orders = []
         
-        # Only place orders if we have capacity and they make sense
-        if bid_volume > 0 and bid_price > 0:
-            orders.append(Order(product, bid_price, bid_volume))
+        # Market making approach - try to capture bid-ask spread
+        if order_depth.buy_orders and order_depth.sell_orders:
+            # If spread is wide enough, place orders inside the spread
+            best_bid = max(order_depth.buy_orders.keys())
+            best_ask = min(order_depth.sell_orders.keys())
+            spread = best_ask - best_bid
+            
+            # Only provide liquidity if spread is favorable
+            if spread > 2:
+                # Place orders inside the spread
+                our_bid = best_bid + 1
+                our_ask = best_ask - 1
+                
+                # Ensure we're not crossing the spread
+                if our_bid >= our_ask:
+                    our_bid = best_bid
+                    our_ask = best_ask
+                
+                # Calculate quantities based on existing orders and our capacity
+                best_bid_quantity = abs(sum(order_depth.buy_orders.values()))
+                best_ask_quantity = abs(sum(order_depth.sell_orders.values()))
+                
+                # Start with base sizes
+                bid_size = min(50, buy_capacity)
+                ask_size = min(50, sell_capacity)
+                
+                # Add bid order if we have capacity
+                if buy_capacity > 0:
+                    orders.append(Order(product, our_bid, bid_size))
+                
+                # Add ask order if we have capacity
+                if sell_capacity > 0:
+                    orders.append(Order(product, our_ask, -ask_size))
         
-        if ask_volume > 0 and days_to_expiry > 0:  # Don't sell options on expiry day
-            orders.append(Order(product, ask_price, -ask_volume))
+        # Directional trading based on position
+        # If we have a significant position, try to revert to neutral
+        if pos > position_limit * 0.4:  # If we're long more than 30% of capacity
+            # Try to sell at market
+            if order_depth.buy_orders:
+                best_bid = max(order_depth.buy_orders.keys())
+                bid_volume = order_depth.buy_orders[best_bid]
+                sell_size = min(abs(pos), abs(bid_volume))
+                orders.append(Order(product, best_bid, -sell_size))
         
-        print(f"[{product}] pos={pos}, theo={theoretical_price:.1f}, market={market_price:.1f}, " +
-              f"delta={delta:.2f}, days_left={days_to_expiry}, bid={bid_price}x{bid_volume}, ask={ask_price}x{ask_volume}")
+        elif pos < -position_limit * 0.4:  # If we're short more than 30% of capacity
+            # Try to buy at market
+            if order_depth.sell_orders:
+                best_ask = min(order_depth.sell_orders.keys())
+                ask_volume = order_depth.sell_orders[best_ask]
+                buy_size = min(abs(pos), abs(ask_volume))
+                orders.append(Order(product, best_ask, buy_size))
+        
+        # If few or no orders, add orders near mid price
+        if len(orders) < 2:
+            # Calculate bid and ask prices around mid
+            bid_price = int(mid - 2)
+            ask_price = int(mid + 2)
+            
+            # Add missing orders
+            if not any(o.price == bid_price and o.quantity > 0 for o in orders) and buy_capacity > 0:
+                orders.append(Order(product, bid_price, min(40, buy_capacity)))
+            
+            if not any(o.price == ask_price and o.quantity < 0 for o in orders) and sell_capacity > 0:
+                orders.append(Order(product, ask_price, -min(40, sell_capacity)))
+        
+        # Print debug info
+        print(f"[{product}] pos={pos}, mid={mid:.1f}, orders={[(o.price, o.quantity) for o in orders]}")
         
         return orders
+     
+    # Picnic 1 pnl - 243 - combined - 2467
+    def picnic_1_mm_strategy(self, state: TradingState) -> List[Order]: 
+        """
+        Market making strategy for resin rock with more aggressive parameters
+        
+        Args:
+            state: Current trading state
+            
+        Returns:
+            List of orders for volcanic rock
+        """
+        product = PICNIC_BASKET1
+        pos = self.get_position(product, state)
+        
+        # Get order book data
+        order_depth = state.order_depths[product]
+        
+        # Calculate fair value using mid price
+        if order_depth.buy_orders and order_depth.sell_orders:
+            best_bid = max(order_depth.buy_orders.keys())
+            best_ask = min(order_depth.sell_orders.keys())
+            mid = (best_bid + best_ask) / 2
+        else:
+            mid = self.get_mid_price(product, state)
+        
+        # Store price for volatility calculation
+        if product not in self.new_history:
+            self.new_history[product] = []
+        self.new_history[product].append(mid)
+        
+        # Get position limit
+        position_limit = self.position_limit[product]
+        
+        # Calculate available capacity
+        buy_capacity = position_limit - pos
+        sell_capacity = position_limit + pos
+        
+        orders = []
+        
+        # Market making approach - try to capture bid-ask spread
+        if order_depth.buy_orders and order_depth.sell_orders:
+            # If spread is wide enough, place orders inside the spread
+            best_bid = max(order_depth.buy_orders.keys())
+            best_ask = min(order_depth.sell_orders.keys())
+            spread = best_ask - best_bid
+            
+            # Only provide liquidity if spread is favorable
+            if spread > 2:
+                # Place orders inside the spread
+                our_bid = best_bid + 1
+                our_ask = best_ask - 1
+                
+                # Ensure we're not crossing the spread
+                if our_bid >= our_ask:
+                    our_bid = best_bid
+                    our_ask = best_ask
+                
+                # Calculate quantities based on existing orders and our capacity
+                best_bid_quantity = abs(sum(order_depth.buy_orders.values()))
+                best_ask_quantity = abs(sum(order_depth.sell_orders.values()))
+                
+                # Start with base sizes
+                bid_size = min(20, buy_capacity)
+                ask_size = min(20, sell_capacity)
+                
+                # Add bid order if we have capacity
+                if buy_capacity > 0:
+                    orders.append(Order(product, our_bid, bid_size))
+                
+                # Add ask order if we have capacity
+                if sell_capacity > 0:
+                    orders.append(Order(product, our_ask, -ask_size))
+        
+        # Directional trading based on position
+        # If we have a significant position, try to revert to neutral
+        if pos > position_limit * 0.4:  # If we're long more than 30% of capacity
+            # Try to sell at market
+            if order_depth.buy_orders:
+                best_bid = max(order_depth.buy_orders.keys())
+                bid_volume = order_depth.buy_orders[best_bid]
+                sell_size = min(abs(pos), abs(bid_volume))
+                orders.append(Order(product, best_bid, -sell_size))
+        
+        elif pos < -position_limit * 0.4:  # If we're short more than 30% of capacity
+            # Try to buy at market
+            if order_depth.sell_orders:
+                best_ask = min(order_depth.sell_orders.keys())
+                ask_volume = order_depth.sell_orders[best_ask]
+                buy_size = min(abs(pos), abs(ask_volume))
+                orders.append(Order(product, best_ask, buy_size))
+        
+        # If few or no orders, add orders near mid price
+        if len(orders) < 2:
+            # Calculate bid and ask prices around mid
+            bid_price = int(mid - 2)
+            ask_price = int(mid + 2)
+            
+            # Add missing orders
+            if not any(o.price == bid_price and o.quantity > 0 for o in orders) and buy_capacity > 0:
+                orders.append(Order(product, bid_price, min(40, buy_capacity)))
+            
+            if not any(o.price == ask_price and o.quantity < 0 for o in orders) and sell_capacity > 0:
+                orders.append(Order(product, ask_price, -min(40, sell_capacity)))
+        
+        # Print debug info
+        print(f"[{product}] pos={pos}, mid={mid:.1f}, orders={[(o.price, o.quantity) for o in orders]}")
+        
+        return orders
+    
+    # Picnic 2 pnl - 532 - combined - 2938
+    def picnic_2_mm_strategy(self, state: TradingState) -> List[Order]: 
+        """
+        Market making strategy for resin rock with more aggressive parameters
+        
+        Args:
+            state: Current trading state
+            
+        Returns:
+            List of orders for volcanic rock
+        """
+        product = PICNIC_BASKET2
+        pos = self.get_position(product, state)
+        
+        # Get order book data
+        order_depth = state.order_depths[product]
+        
+        # Calculate fair value using mid price
+        if order_depth.buy_orders and order_depth.sell_orders:
+            best_bid = max(order_depth.buy_orders.keys())
+            best_ask = min(order_depth.sell_orders.keys())
+            mid = (best_bid + best_ask) / 2
+        else:
+            mid = self.get_mid_price(product, state)
+        
+        # Store price for volatility calculation
+        if product not in self.new_history:
+            self.new_history[product] = []
+        self.new_history[product].append(mid)
+        
+        # Get position limit
+        position_limit = self.position_limit[product]
+        
+        # Calculate available capacity
+        buy_capacity = position_limit - pos
+        sell_capacity = position_limit + pos
+        
+        orders = []
+        
+        # Market making approach - try to capture bid-ask spread
+        if order_depth.buy_orders and order_depth.sell_orders:
+            # If spread is wide enough, place orders inside the spread
+            best_bid = max(order_depth.buy_orders.keys())
+            best_ask = min(order_depth.sell_orders.keys())
+            spread = best_ask - best_bid
+            
+            # Only provide liquidity if spread is favorable
+            if spread > 3:
+                # Place orders inside the spread
+                our_bid = best_bid + 10
+                our_ask = best_ask - 10
+                
+                # Ensure we're not crossing the spread
+                if our_bid >= our_ask:
+                    our_bid = best_bid
+                    our_ask = best_ask
+                
+                # Calculate quantities based on existing orders and our capacity
+                best_bid_quantity = abs(sum(order_depth.buy_orders.values()))
+                best_ask_quantity = abs(sum(order_depth.sell_orders.values()))
+                
+                # Start with base sizes
+                bid_size = min(10, buy_capacity)
+                ask_size = min(10, sell_capacity)
+                
+                # Add bid order if we have capacity
+                if buy_capacity > 1:
+                    orders.append(Order(product, our_bid, bid_size))
+                
+                # Add ask order if we have capacity
+                if sell_capacity > 1:
+                    orders.append(Order(product, our_ask, -ask_size))
+        
+        # Directional trading based on position
+        # If we have a significant position, try to revert to neutral
+        if pos > position_limit * 0.15:  # If we're long more than 30% of capacity
+            # Try to sell at market
+            if order_depth.buy_orders:
+                best_bid = max(order_depth.buy_orders.keys())
+                bid_volume = order_depth.buy_orders[best_bid]
+                sell_size = min(abs(pos), abs(bid_volume))
+                orders.append(Order(product, best_bid, -sell_size))
+        
+        elif pos < -position_limit * 0.15:  # If we're short more than 30% of capacity
+            # Try to buy at market
+            if order_depth.sell_orders:
+                best_ask = min(order_depth.sell_orders.keys())
+                ask_volume = order_depth.sell_orders[best_ask]
+                buy_size = min(abs(pos), abs(ask_volume))
+                orders.append(Order(product, best_ask, buy_size))
+        
+        # If few or no orders, add orders near mid price
+        if len(orders) < 4:
+            # Calculate bid and ask prices around mid
+            bid_price = int(mid - 2)
+            ask_price = int(mid + 2)
+            
+            # Add missing orders
+            if not any(o.price == bid_price and o.quantity > 0 for o in orders) and buy_capacity > 0:
+                orders.append(Order(product, bid_price, min(40, buy_capacity)))
+            
+            if not any(o.price == ask_price and o.quantity < 0 for o in orders) and sell_capacity > 0:
+                orders.append(Order(product, ask_price, -min(40, sell_capacity)))
+        
+        # Print debug info
+        print(f"[{product}] pos={pos}, mid={mid:.1f}, orders={[(o.price, o.quantity) for o in orders]}")
+        
+        return orders
+    
