@@ -120,7 +120,7 @@ Once destined for soccer greatness, Cristiano traded the pitch for the market. N
 
 You’ve been invited to trade on the exchange of the West Archipelago for one day only. An exclusive event and perfect opportunity to make some big final profits before the champion is crowned. Benny the Bull has granted you access to his most trusted news source: Goldberg. You’ll find all the information you need right there. Be aware that trading these foreign goods comes at a price. The more you trade in one good, the more expensive it will get. This is the final stretch. Make it count!
 
-rade objective
+Trade objective
 Benny the Bull has invited us to trade on the West Archipelago Exchange for one day. You have the opportunity to trade all sorts of new goods against yesterday's prices, just in time before the exchange opens for a new day. In order to get up to speed with their current market dynamics, they have granted you access to their most valuable news source: Goldberg.
 
 Your objective is to develop a trading strategy that maximizes your profit. You have 1.000.000 SeaShells available as trading capital and can choose to either buy or sell different goods. Specify the percentage you want to buy or sell for, and make sure it doesn’t exceed your total available capital. Note that there are fees involved in these trades. The more you trade in one good, the higher the fee for that good will be.
