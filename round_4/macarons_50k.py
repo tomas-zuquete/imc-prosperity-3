@@ -95,6 +95,14 @@ class Trader:
         """
         orders: List[Order] = []
         
+        # Initialize the product in history dictionaries if not already present
+        if product not in self.mid_price_history:
+            self.mid_price_history[product] = []
+        if product not in self.fair_value_history:
+            self.fair_value_history[product] = []
+        if product not in self.position_history:
+            self.position_history[product] = []
+        
         # Get the observations for MAGNIFICENT_MACARONS
         obs = None
         if hasattr(observations, 'conversionObservations') and product in observations.conversionObservations:
