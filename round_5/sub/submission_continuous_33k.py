@@ -335,49 +335,49 @@ class Trader:
                 except Exception as e:
                     print(f"Error in ink_strategy: {type(e).__name__}")
             
-            elif product == PICNIC_BASKET1:
-                try:
-                    result[product] = self.picnic_1_mm_strategy(state)
-                except Exception as e:
-                    print(f"Error in picnic_basket1_strategy: {type(e).__name__}")
+            # elif product == PICNIC_BASKET1:
+            #     try:
+            #         result[product] = self.picnic_1_mm_strategy(state)
+            #     except Exception as e:
+            #         print(f"Error in picnic_basket1_strategy: {type(e).__name__}")
             
-            elif product == PICNIC_BASKET2:
-                try:
-                    result[product] = self.picnic_2_mm_strategy(state)
-                except Exception as e:
-                    print(f"Error in picnic_basket2_strategy: {type(e).__name__}")
+            # elif product == PICNIC_BASKET2:
+            #     try:
+            #         result[product] = self.picnic_2_mm_strategy(state)
+            #     except Exception as e:
+            #         print(f"Error in picnic_basket2_strategy: {type(e).__name__}")
             
-            elif product == CROISSANTS:
-                try:
-                    result[product] = self.croissants_strategy(state)
-                except Exception as e:
-                    print(f"Error in croissants_strategy: {type(e).__name__}")
+            # elif product == CROISSANTS:
+            #     try:
+            #         result[product] = self.croissants_strategy(state)
+            #     except Exception as e:
+            #         print(f"Error in croissants_strategy: {type(e).__name__}")
                     
-            elif product == JAMS:
-                try:
-                    result[product] = self.jams_strategy(state)
-                except Exception as e:
-                    print(f"Error in jams_strategy: {type(e).__name__}")
+            # elif product == JAMS:
+            #     try:
+            #         result[product] = self.jams_strategy(state)
+            #     except Exception as e:
+            #         print(f"Error in jams_strategy: {type(e).__name__}")
                     
-            elif product == DJEMBES:
-                try:
-                    result[product] = self.djembes_strategy(state)
-                except Exception as e:
-                    print(f"Error in djembes_strategy: {type(e).__name__}")
+            # elif product == DJEMBES:
+            #     try:
+            #         result[product] = self.djembes_strategy(state)
+            #     except Exception as e:
+            #         print(f"Error in djembes_strategy: {type(e).__name__}")
                     
-            elif product == KELP:
-                try:
-                    result[product] = self.kelp_strategy(state)
-                except Exception as e:
-                    print(f"Error in kelp_strategy: {type(e).__name__}")
+            # elif product == KELP:
+            #     try:
+            #         result[product] = self.kelp_strategy(state)
+            #     except Exception as e:
+            #         print(f"Error in kelp_strategy: {type(e).__name__}")
         
         # Process volcanic rock vouchers separately since they're interdependent
-        try:
-            if VOLCANIC_ROCK in state.order_depths or any(product in state.order_depths for product in self.voucher_strikes):
-                voucher_results = self.volcanic_rock_vouchers_strategy(state)
-                result.update(voucher_results)
-        except Exception as e:
-            print(f"Error in volcanic_rock_vouchers_strategy: {type(e).__name__}")
+        # try:
+        #     if VOLCANIC_ROCK in state.order_depths or any(product in state.order_depths for product in self.voucher_strikes):
+        #         voucher_results = self.volcanic_rock_vouchers_strategy(state)
+        #         result.update(voucher_results)
+        # except Exception as e:
+        #     print(f"Error in volcanic_rock_vouchers_strategy: {type(e).__name__}")
         
         # Determine if conversion is needed
         conversion = 0
