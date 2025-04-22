@@ -130,7 +130,6 @@ def update_EMA(prev_ema: float, price: float, window: int) -> float:
     alpha = 2 / (window + 1)
     return alpha * price + (1 - alpha) * prev_ema
 
-# Black-Scholes option pricing model
 def black_scholes_call(S: float, K: float, T: float, r: float, sigma: float, q: float = 0) -> Tuple[float, float, float]:
     if T <= 0 or sigma <= 0 or S <= 0 or K <= 0:
         price = max(S - K, 0)  # Intrinsic value of the call
