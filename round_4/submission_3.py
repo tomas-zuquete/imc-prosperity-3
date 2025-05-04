@@ -2,7 +2,7 @@ import math
 import jsonpickle
 import numpy as np
 from typing import Dict, List, Any, Tuple
-from datamodel import Order, OrderDepth, TradingState, Trade, UserId
+from round_5.datamodel import Order, OrderDepth, TradingState, Trade, UserId
 
 # Constants
 SUBMISSION = "SUBMISSION"
